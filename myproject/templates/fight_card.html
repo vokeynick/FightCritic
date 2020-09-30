@@ -1,0 +1,35 @@
+{% extends 'header.html' %}
+
+{% block content %}
+
+
+<h1 class="fightHeader">{{ card.title }}</h1>
+
+<div class="fight-container card-column">
+
+  {% for fight in fights %}
+  <div class="card cardcard mt-4 mb-3 hvr-grow" style="max-width: 540px;">
+    <a href="{{ url_for('fight', fight_id=fight.id) }}">
+      <div class="row no-gutters">
+        <div class="col-md-12">
+
+          <img src="{{ fight.fight_image }}" class="card-img">
+
+        </div>
+        <div class="col-md-12">
+          <div class="card-body">
+            <h5 class="card-title">{{ fight.fighter_1 }} VS {{ fight.fighter_2 }}</h5>
+            <p class="card-text"></p>
+            <h5 class="card-rating">{% if fight.rating %}{{ fight.rating|round(1) }}<span class='reviewStar'>★</span>{% endif %}</h5>
+            <p class="card-outcome">WINNER:<span style="color:red"> {{ fight.winner }}</span> via <span style="color:red">{{ fight.method }}</span> Round {{ fight.round }} @ {{ fight.time }}</p>
+          </div>
+        </div>
+      </div>
+    </a>
+  </div>
+  {% endfor %}
+</div>
+
+</html>
+
+{% endblock %}

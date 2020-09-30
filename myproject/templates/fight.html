@@ -1,0 +1,135 @@
+{% extends 'header.html' %}
+
+{% block content %}
+
+
+
+
+
+<div class="container">
+  <div class="card">
+    <div class="card-body">
+      <h1 class="card-title">{{ fight.fighter_1 }} VS {{ fight.fighter_2 }}</h1>
+      <h1 class="fight-rating">{% if rating is not none %} {{ rating | round(1) }}<span class='reviewStar'>★</span> {% endif %}</h1>
+      <h5 class="outcome" style="color:green">WINNER: {{ fight.winner }} via {{ fight.method }} Round {{ fight.round }} @ {{ fight.time }}</h5>
+      <div class="icon-bar">
+        <a href="https://www.facebook.com/sharer.php?u={{request.url}}" title="Share on Facebook" target="_blank" class="facebook"><i class="fa fa-facebook"></i></a>
+        <a href="https://twitter.com/share?url={{fight_url}}&text={{fight.title}}&via=[via]&hashtags=[hashtags]" target="_blank" title="Share on Twitter" class="twitter"><i class="fa fa-twitter"></i></a>
+        <a href="https://reddit.com/submit?url={{fight_url}}&title={{fight.title}}" title="Share on Reddit" target="_blank" class="reddit"><i class="fa fa-reddit"></i></a>
+      </div>
+    </div>
+    <img class="card-img-bottom" src="{{ fight.fight_image }}" alt="Card image cap">
+    <div class="card-body review-body">
+      {% if current_user.is_authenticated %}
+      <button type='button' class="btn btn-primary review-button" data-toggle="modal" data-target="#reviewModal">Leave Review</button>
+      {% else %}
+      <div class="text-center">
+        <a href="{{ url_for('login', next=request.path) }}">Login to leave review</a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+
+
+
+{% for review in reviews %}
+<div class="modal fade" id="commentModal{{ review.id }}" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLongTitle">Leave Your Reply:</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form method="POST" action='?form=CommentForm' class="text-center border border-light p-5">
+          {# This hidden_tag is a CSRF security feature. #}
+          {{ commentform.hidden_tag() }}
+          {{ commentform.content(class="form-control") }}<br>
+          <input type="hidden" id='reviewID' name="reviewID" value="{{ review.id }}">
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        {{ commentform.submitcomment(class="btn btn-primary") }}
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+
+<div class="modal fade" id="reviewModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLongTitle">Leave Your Review:</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form method="POST" class="text-center border reviewform border-dark p-5">
+          {# This hidden_tag is a CSRF security feature. #}
+          {{ reviewform.hidden_tag() }}
+          <div class="rating">
+
+
+            {% for subfield in reviewform.rating %}
+            <tr>
+              <td>{{ subfield(class_='rating') }}</td>
+              <td>{{ subfield.label }}</td>
+            </tr>
+            {% endfor %}
+          </div>
+          {{ reviewform.title(class="form-control", placeholder="Title") }}<br>
+          {{ reviewform.content(class="form-control", placeholder="Review") }}<br>
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          {{ reviewform.submitreview(class="btn btn-primary") }}
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  {% for review in reviews %}
+  <div class="card">
+    <div class="card-body">
+      <h1 class="card-title">{{ review.rating }}<span class='reviewStar'>★</span></h1>
+      <h2 class="card-title review-title"><strong>{{ review.title }}</strong></h2>
+      <h5 class="card-username">by: <strong>{{ review.user_id }}</strong> <small class="text-muted">{{ review.timestamp.strftime('%Y %B %d %X') }}</small></h5>
+      <p class="card-text" style="font-size:120%">{{ review.content }}</p>
+      {% if current_user.is_authenticated %}
+      <button type='button' class="open-button float-right btn btn-outline-primary ml-2" data-toggle="modal" data-target="#commentModal{{ review.id }}">Comment</button>
+      {% else %}
+      <a class='float-right' href="{{ url_for('login', next=request.path) }}">Login to Comment</a>
+      {% endif %}
+    </div>
+  </div>
+  {% for comment in review.comments.all() %}
+  <div class="card commentcard">
+    <div class="card-body">
+      <h5 class="card-username"><strong>{{ comment.user_id }}</strong> <small class="text-muted">{{ comment.timestamp.strftime('%Y %B %d %X') }}</small></h5>
+      <p class="card-text" style="font-size:120%">{{ comment.content }}</p>
+      <button type='button' class="open-button float-right btn btn-outline-primary ml-2" data-toggle="modal" data-target="#commentModal{{ review.id }}">Comment</button>
+    </div>
+  </div>
+  {% endfor %}
+  {% endfor %}
+</div>
+
+
+
+
+
+
+
+
+
+
+{% endblock %}

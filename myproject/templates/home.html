@@ -1,0 +1,49 @@
+{% extends 'header.html' %}
+
+{% block content %}
+
+
+
+
+
+
+<div class="mainFight">
+  <a href="fight_card/{{ maincard.id }}">
+    <img class="mainfight-image" src="../{{ maincard.card_image }}">
+  </a>
+</div>
+
+
+
+<div class="flexbox-container-4">
+  <div class="child-4">
+    <h2>Create an account or LogIn here!</h2>
+  </div>
+  <div class="child-5">
+    <button type="button" onclick="window.location.href='/register'" class="btn btn-dark">SignUp/LogIn</button>
+  </div>
+
+</div>
+<br>
+<br>
+<h1 class="fightHeader">Older Cards</h1>
+
+
+<div class="flexbox-container-2">
+  {% for card in cards[1:] %}
+
+
+  <div class="child hvr-grow">
+    <div class="card-image">
+      <a href="fight_card/{{ card.id }}">
+        <img class="homecards" src="../{{ card.card_image }}" alt="">
+      </a>
+    </div>
+  </div>
+
+
+
+  {% endfor %}
+
+</div>
+{% endblock %}

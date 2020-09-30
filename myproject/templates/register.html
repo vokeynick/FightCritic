@@ -1,0 +1,21 @@
+{% extends "header.html" %}
+{% block content %}
+
+
+<div class="reg-container">
+  <div class="flexbox-container-5">
+    <div class="reg-form">
+      <form method="POST" class="text-center border border-light p-5">
+        {# This hidden_tag is a CSRF security feature. #}
+        {{ form.hidden_tag() }}
+        {{ form.email(class="form-control", placeholder="Email") }}<br>
+        {{ form.username(class="form-control", placeholder="Username") }}<br>
+        {{ form.password(class="form-control", placeholder="Password") }}<br>
+        {{ form.pass_confirm(class="form-control", placeholder="Confirm Password") }}<br>
+        {{ form.submit(class="btn btn-primary") }}<br>
+        <span>Already Registered? <a href='{{url_for('login')}}'>Login</a></span>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
