@@ -105,6 +105,93 @@ def register():
         flash('Thanks for registering! Now you can login!')
         return redirect(url_for('login'))
     return render_template('register.html', form=form)
+def get_google_provider_cfg():
+    return requests.get(GOOGLE_DISCOVERY_URL).json()
+
+@app.route("/google_login")
+def google_login():
+    google_provider_cfg = get_google_provider_cfg()
+    authorization_endpoint = google_provider_cfg["authorization_endpoint"]
+    request_uri = client.prepare_request_uri(authorization_endpoint,
+                                             redirect_uri=request.base_url + "/callback",
+                                             scope=["openid", "email", "profile"])
+    return redirect(request_uri)
+
+@app.route("/google_login/callback")
+def callback():
+    code = request.args.get("code")
+    google_provider_cfg = get_google_provider_cfg()
+    token_endpoint = google_provider_cfg["token_endpoint"]
+    token_url, headers, body = client.prepare_token_request(token_endpoint,
+                                                            authorization_response=request.url,
+                                                            redirect_url=request.base_url,
+                                                            code=code)
+    token_response = requests.post(token_url,
+                                   headers=headers,
+                                   data=body,
+                                   auth=(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET))
+    client.parse_request_body_response(json.dumps(token_response.json()))
+    userinfo_endpoint = google_provider_cfg["userinfo_endpoint"]
+    uri, headers, body = client.add_token(userinfo_endpoint)
+    userinfo_response = requests.get(uri, headers=headers, data=body)
+
+    if userinfo_response.json().get("email_verified"):
+        unique_id = userinfo_response.json()["sub"]
+        users_email = userinfo_response.json()["email"]
+        users_name = userinfo_response.json()["name"]
+    else:
+        return "User email not available or not verified by Google.", 400
+    user = User.query.filter_by(email=users_email).first()
+    if user:
+        login_user(user, remember=True)
+    else:
+        user = User(email=users_email,
+                    username=users_name,
+                    password=unique_id)
+        db.session.add(user)
+        db.session.commit()
+        login_user(user, remember=True)
+    flash('You are logged in with Google!')
+    next = request.args.get('next')
+    if next == None:
+        next = url_for('home')
+    return redirect(next)
+
+@app.route('/facebook_login')
+def facebook_login():
+    callback = url_for('facebook_authorized',
+                        _external=True)
+    return facebook.authorize(callback=callback)
+
+@app.route('/facebook_login/authorized')
+def facebook_authorized():
+    resp = facebook.authorized_response()
+    if resp is None:
+        return 'Access denied: reason=%s error=%s' % (
+            request.args['error_reason'],
+            request.args['error_description']
+        )
+    if isinstance(resp, OAuthException):
+        return 'Access denied: %s' % resp.message
+
+    session['oauth_token'] = (resp['access_token'], '')
+    me = facebook.get('/me?fields=id,name,email')
+    user = User.query.filter_by(email=me.data['email']).first()
+    if user:
+        login_user(user, remember=True)
+    else:
+        user = User(email=me.data['email'],
+                    username=me.data['name'],
+                    password="facebook")
+        db.session.add(user)
+        db.session.commit()
+        login_user(user, remember=True)
+    flash('You are logged in with Facebook!')
+    return redirect(url_for('home'))
+
+@facebook.tokengetter
+def get_facebook_oauth_token():
+    return session.get('oauth_token')
 
 @app.route('/logout')
 @login_required
